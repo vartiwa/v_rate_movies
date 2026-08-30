@@ -1,5 +1,6 @@
 /**
- * Fandango Investigation Editorial Interactive Experience
+ * v_rate_movies • Bento Grid Intelligence Experience
+ * Author: vartiwa (varunt154@gmail.com)
  */
 
 const API_BASE = "";
@@ -16,8 +17,6 @@ async function initApp() {
   initTheme();
   initTabs();
   initGlitchSimulator();
-  initScaleConverter();
-  initTicketImpactSimulator();
   initFilmExplorerEvents();
   initSQLWorkbenchEvents();
   initExportButton();
@@ -58,7 +57,7 @@ function initTheme() {
 
 // 2. Tab Navigation
 function initTabs() {
-  const tabs = document.querySelectorAll(".nav-tab");
+  const tabs = document.querySelectorAll(".pill-tab, .nav-tab");
   tabs.forEach(tab => {
     tab.addEventListener("click", () => {
       tabs.forEach(t => t.classList.remove("active"));
@@ -72,7 +71,7 @@ function initTabs() {
   });
 }
 
-// 3. Glitch Simulator (Top Interactive Slider)
+// 3. Glitch Simulator (Hero Feature)
 function initGlitchSimulator() {
   const slider = document.getElementById("glitchSlider");
   const trueValEl = document.getElementById("simTrueRating");
@@ -104,19 +103,19 @@ function initGlitchSimulator() {
     const delta = (fandangoRound - mathRound).toFixed(1);
     if (glitchDeltaEl) {
       if (delta > 0) {
-        glitchDeltaEl.innerHTML = `<span style="color: var(--fte-crimson);">+${delta} ★ Inflation</span>`;
+        glitchDeltaEl.innerHTML = `<span style="color: var(--accent-crimson); font-weight: 700;">+${delta} ★ Inflation Penalty</span>`;
       } else {
-        glitchDeltaEl.innerHTML = `<span style="color: var(--fte-green);">0.0 ★ Normal</span>`;
+        glitchDeltaEl.innerHTML = `<span style="color: var(--accent-emerald); font-weight: 700;">0.0 ★ Normal Unbiased</span>`;
       }
     }
 
     if (simNoteEl) {
       if (frac >= 0.1 && frac < 0.25) {
-        simNoteEl.textContent = `Glitch Active: A rating of ${trueScore.toFixed(1)} is mathematically 4.0★, but Fandango pushed it up to 4.5★!`;
+        simNoteEl.textContent = `Glitch Active: A score of ${trueScore.toFixed(1)} is mathematically 4.0★, but Fandango pushed it up to 4.5★!`;
       } else if (frac >= 0.6 && frac < 0.75) {
-        simNoteEl.textContent = `Glitch Active: A rating of ${trueScore.toFixed(1)} is mathematically 4.5★, but Fandango pushed it up to 5.0★!`;
+        simNoteEl.textContent = `Glitch Active: A score of ${trueScore.toFixed(1)} is mathematically 4.5★, but Fandango pushed it up to 5.0★!`;
       } else {
-        simNoteEl.textContent = `Standard half-round interval point.`;
+        simNoteEl.textContent = `Standard rounding point.`;
       }
     }
   }
@@ -133,7 +132,7 @@ async function safeFetchJson(endpoint, embeddedKey) {
       if (res.ok) return await res.json();
     }
   } catch (e) {
-    // fallback to embedded
+    // fallback
   }
   if (typeof EMBEDDED_DATA !== "undefined" && EMBEDDED_DATA[embeddedKey]) {
     return EMBEDDED_DATA[embeddedKey];
@@ -141,19 +140,11 @@ async function safeFetchJson(endpoint, embeddedKey) {
   return null;
 }
 
-// 5. Overview & Disparities
+// 5. Overview KPIs
 async function loadOverview() {
   try {
     const data = await safeFetchJson(`${API_BASE}/api/overview`, 'overview');
     if (!data) return;
-
-    document.getElementById("kpiTotalSample").textContent = data.total_2015_movies;
-    document.getElementById("kpiDisplayedAvg").textContent = Number(data.avg_displayed_stars_2015).toFixed(2);
-    document.getElementById("kpiActualAvg").textContent = Number(data.avg_actual_rating_2015).toFixed(2);
-    document.getElementById("kpiInflationDelta").textContent = `+${Number(data.avg_inflation_delta).toFixed(2)} ★`;
-    document.getElementById("kpiRoundedUpRate").textContent = `${data.rounded_up_pct_2015}%`;
-    document.getElementById("kpiPostArticleAvg").textContent = Number(data.avg_displayed_stars_2016_17).toFixed(2);
-    document.getElementById("kpiPostShift").textContent = `${Number(data.temporal_change).toFixed(2)} ★`;
 
     if (data.top_disparities) {
       renderDisparityGallery(data.top_disparities);
@@ -168,22 +159,16 @@ function renderDisparityGallery(disparities) {
   if (!container) return;
 
   container.innerHTML = disparities.map(d => `
-    <div class="disparity-card">
-      <div class="disparity-title" title="${d.film}">${d.film}</div>
-      <div class="disparity-comparison-bar">
-        <div class="platform-score-box">
-          <div class="platform-score-label">Rotten Tomatoes</div>
-          <div class="platform-score-num" style="color: var(--color-rt);">${d.rt_raw}% <span style="font-size: 0.8rem;">(${d.rt_norm.toFixed(1)}★)</span></div>
-        </div>
-        <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-muted);">vs</div>
-        <div class="platform-score-box">
-          <div class="platform-score-label">Fandango Displayed</div>
-          <div class="platform-score-num" style="color: var(--fte-crimson);">${d.fandango_stars.toFixed(1)} ★</div>
-        </div>
+    <div class="movie-mini-card">
+      <div class="movie-mini-title" title="${d.film}">${d.film}</div>
+      <div class="movie-mini-stars">${getVisualStars(d.fandango_stars)}</div>
+      <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-card-subtle); padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); margin-bottom: 0.6rem; font-size: 0.8rem;">
+        <span>RT Critics: <strong style="color: var(--color-rt);">${d.rt_raw}%</strong></span>
+        <span>Fandango: <strong style="color: var(--accent-primary);">${d.fandango_stars.toFixed(1)}★</strong></span>
       </div>
-      <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-dim);">
-        <span>True HTML Rating: <strong>${d.fandango_actual.toFixed(2)}</strong></span>
-        <span class="diff-badge" style="background: rgba(255, 39, 0, 0.1); color: var(--fte-crimson);">+${d.gap.toFixed(2)} ★ Gap</span>
+      <div class="movie-mini-footer">
+        <span>True HTML: ${d.fandango_actual.toFixed(2)}</span>
+        <span class="widget-badge danger">+${d.gap.toFixed(2)} ★ Gap</span>
       </div>
     </div>
   `).join("");
@@ -250,7 +235,7 @@ function renderParityScatterPlot(movies) {
           label: "Zero Inflation Line (Displayed = True)",
           data: parityLine,
           type: "line",
-          borderColor: "rgba(148, 163, 184, 0.5)",
+          borderColor: "rgba(148, 163, 184, 0.4)",
           borderDash: [5, 5],
           borderWidth: 2,
           pointRadius: 0,
@@ -266,10 +251,10 @@ function renderParityScatterPlot(movies) {
           pointHoverRadius: 9,
           pointBackgroundColor: (ctx) => {
             const diff = ctx.raw?.diff || 0;
-            if (diff >= 0.5) return "#ff2700";
+            if (diff >= 0.5) return "#f43f5e";
             if (diff >= 0.4) return "#f59e0b";
             if (diff >= 0.2) return "#fbbf24";
-            return "#008fd5";
+            return "#6366f1";
           },
           pointBorderColor: "#ffffff",
           pointBorderWidth: 1.5,
@@ -294,14 +279,13 @@ function renderParityScatterPlot(movies) {
           }
         },
         tooltip: {
-          backgroundColor: currentTheme === "dark" ? "#111726" : "#ffffff",
-          titleColor: currentTheme === "dark" ? "#ffffff" : "#0f172a",
-          titleFont: { family: "'Newsreader', serif", weight: "700", size: 14 },
-          bodyColor: currentTheme === "dark" ? "#cbd5e1" : "#475569",
+          backgroundColor: currentTheme === "dark" ? "#1e293b" : "#0f172a",
+          titleColor: "#ffffff",
+          titleFont: { family: "'Plus Jakarta Sans', sans-serif", weight: "700", size: 13 },
+          bodyColor: "#cbd5e1",
           bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 12 },
           padding: 12,
-          borderColor: currentTheme === "dark" ? "rgba(255,255,255,0.15)" : "#cbd5e1",
-          borderWidth: 1,
+          borderRadius: 8,
           displayColors: false,
           callbacks: {
             title: (items) => items[0].raw.film || "Zero Inflation Line",
@@ -322,24 +306,14 @@ function renderParityScatterPlot(movies) {
         x: {
           min: 2.5,
           max: 5.0,
-          title: {
-            display: true,
-            text: "True Underlying HTML Rating (Unrounded)",
-            color: currentTheme === "dark" ? "#94a3b8" : "#475569",
-            font: { weight: "700", size: 11 }
-          },
-          grid: { color: currentTheme === "dark" ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)" }
+          title: { display: true, text: "True Underlying HTML Rating (Unrounded)", color: "#94a3b8", font: { weight: "700", size: 11 } },
+          grid: { color: currentTheme === "dark" ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.04)" }
         },
         y: {
           min: 2.5,
           max: 5.2,
-          title: {
-            display: true,
-            text: "Displayed Stars on Fandango",
-            color: currentTheme === "dark" ? "#94a3b8" : "#475569",
-            font: { weight: "700", size: 11 }
-          },
-          grid: { color: currentTheme === "dark" ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)" }
+          title: { display: true, text: "Displayed Stars on Fandango", color: "#94a3b8", font: { weight: "700", size: 11 } },
+          grid: { color: currentTheme === "dark" ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.04)" }
         }
       }
     }
@@ -353,15 +327,12 @@ function renderWallOfInflation(movies) {
   const topInflated = movies.filter(m => m.discrepancy >= 0.5).slice(0, 8);
 
   container.innerHTML = topInflated.map(m => `
-    <div class="wall-card" onclick="updateSpotlightByName('${m.film.replace(/'/g, "\\'")}')">
-      <div class="wall-card-title" title="${m.film}">${m.film}</div>
-      <div class="wall-stars-row">
-        <span class="star-rating-display">${getVisualStars(m.fandango_stars)}</span>
-        <span class="diff-badge">+${Number(m.discrepancy).toFixed(2)} ★</span>
-      </div>
-      <div class="wall-meta-row">
-        <span>True: ${Number(m.fandango_actual).toFixed(2)} / 5.0</span>
-        <span>RT: ${Number(m.rt_norm).toFixed(1)} ★</span>
+    <div class="movie-mini-card" onclick="updateSpotlightByName('${m.film.replace(/'/g, "\\'")}')">
+      <div class="movie-mini-title" title="${m.film}">${m.film}</div>
+      <div class="movie-mini-stars">${getVisualStars(m.fandango_stars)}</div>
+      <div class="movie-mini-footer">
+        <span>True: <strong>${Number(m.fandango_actual).toFixed(2)} / 5.0</strong></span>
+        <span class="widget-badge danger">+${Number(m.discrepancy).toFixed(2)} ★</span>
       </div>
     </div>
   `).join("");
@@ -371,7 +342,7 @@ window.updateSpotlightByName = (name) => {
   const found = allMoviesData.find(m => m.film === name);
   if (found) {
     updateSpotlight(found);
-    window.scrollTo({ top: document.querySelector('.split-plot-wrapper')?.offsetTop - 80 || 0, behavior: 'smooth' });
+    window.scrollTo({ top: document.getElementById('parityScatterChart')?.offsetTop - 120 || 0, behavior: 'smooth' });
   }
 };
 
@@ -382,7 +353,7 @@ function getVisualStars(rating) {
   return '★'.repeat(full) + (half ? '½' : '') + '☆'.repeat(empty);
 }
 
-// 7. Discrepancy Breakdown
+// 7. Discrepancy Breakdown (Bento Pill Bars)
 async function loadDiscrepancies() {
   try {
     const data = await safeFetchJson(`${API_BASE}/api/discrepancies`, 'discrepancies');
@@ -403,14 +374,15 @@ async function loadDiscrepancies() {
             label: "Films Count",
             data: counts,
             backgroundColor: [
-              "#008fd5",
-              "#facc15",
+              "#6366f1",
+              "#818cf8",
+              "#a5b4fc",
+              "#fbbf24",
               "#f59e0b",
-              "#f97316",
-              "#ef4444",
-              "#ff2700",
+              "#f43f5e",
             ],
-            borderRadius: 6,
+            borderRadius: 8,
+            borderSkipped: false,
           }]
         },
         options: {
@@ -418,34 +390,18 @@ async function loadDiscrepancies() {
           maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
-            y: { beginAtZero: true, grid: { color: currentTheme === "dark" ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)" } },
+            y: { beginAtZero: true, grid: { color: currentTheme === "dark" ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.04)" } },
             x: { grid: { display: false } }
           }
         }
       });
-    }
-
-    const tbody = document.querySelector("#discrepancyMatrixTable tbody");
-    if (tbody) {
-      tbody.innerHTML = data.breakdown.map(row => `
-        <tr>
-          <td><strong>+${Number(row.difference).toFixed(1)} Stars</strong></td>
-          <td>${row.count} films</td>
-          <td>
-            <div style="display: flex; align-items: center; gap: 0.6rem;">
-              <div style="background: ${row.difference >= 0.4 ? 'var(--fte-crimson)' : 'var(--fte-gold)'}; height: 6px; width: ${row.percentage * 2}px; border-radius: 3px;"></div>
-              <span>${row.percentage}%</span>
-            </div>
-          </td>
-        </tr>
-      `).join("");
     }
   } catch (err) {
     console.error("Discrepancies error:", err);
   }
 }
 
-// 8. Platforms & KDE Curves
+// 8. Platforms Benchmark (Spline Density)
 async function loadPlatforms() {
   try {
     const data = await safeFetchJson(`${API_BASE}/api/platforms`, 'platforms');
@@ -456,7 +412,7 @@ async function loadPlatforms() {
       tbody.innerHTML = data.summary_table.map(row => `
         <tr>
           <td><strong>${row.platform}</strong></td>
-          <td><strong style="color: ${row.platform.includes('Fandango (Displayed)') ? 'var(--fte-crimson)' : 'var(--text-main)'};">${Number(row.mean).toFixed(2)} ★</strong></td>
+          <td><strong style="color: ${row.platform.includes('Fandango (Displayed)') ? 'var(--accent-crimson)' : 'var(--text-main)'};">${Number(row.mean).toFixed(2)} ★</strong></td>
           <td>${Number(row.median).toFixed(2)}</td>
           <td>${Number(row.std).toFixed(2)}</td>
           <td>${Number(row.min).toFixed(2)} - ${Number(row.max).toFixed(2)}</td>
@@ -476,50 +432,40 @@ async function loadPlatforms() {
           labels: kde.x,
           datasets: [
             {
-              label: "Fandango (Displayed Stars)",
+              label: "Fandango (Displayed)",
               data: kde["Fandango (Displayed)"],
-              borderColor: "#ff2700",
-              backgroundColor: "rgba(255, 39, 0, 0.12)",
-              borderWidth: 3,
+              borderColor: "#6366f1",
+              backgroundColor: "rgba(99, 102, 241, 0.15)",
+              borderWidth: 2.5,
               fill: true,
-              tension: 0.35,
+              tension: 0.4,
               pointRadius: 0,
             },
             {
-              label: "Fandango (Actual HTML)",
-              data: kde["Fandango (Actual HTML)"],
-              borderColor: "#008fd5",
-              borderDash: [4, 4],
-              borderWidth: 2,
-              fill: false,
-              tension: 0.35,
-              pointRadius: 0,
-            },
-            {
-              label: "Rotten Tomatoes (Norm)",
+              label: "Rotten Tomatoes",
               data: kde["Rotten Tomatoes (Norm)"],
-              borderColor: "#fa320a",
+              borderColor: "#f43f5e",
               borderWidth: 2,
               fill: false,
-              tension: 0.35,
+              tension: 0.4,
               pointRadius: 0,
             },
             {
-              label: "Metacritic (Norm)",
+              label: "Metacritic",
               data: kde["Metacritic (Norm)"],
-              borderColor: "#339900",
+              borderColor: "#10b981",
               borderWidth: 2,
               fill: false,
-              tension: 0.35,
+              tension: 0.4,
               pointRadius: 0,
             },
             {
-              label: "IMDB (Norm)",
+              label: "IMDB",
               data: kde["IMDB (Norm)"],
-              borderColor: "#e5a900",
+              borderColor: "#f59e0b",
               borderWidth: 2,
               fill: false,
-              tension: 0.35,
+              tension: 0.4,
               pointRadius: 0,
             }
           ]
@@ -537,12 +483,12 @@ async function loadPlatforms() {
           },
           scales: {
             x: {
-              title: { display: true, text: "Standardized 5-Star Rating Scale", color: currentTheme === "dark" ? "#94a3b8" : "#475569" },
-              grid: { color: currentTheme === "dark" ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)" }
+              title: { display: true, text: "Standardized 5-Star Rating Scale", color: "#94a3b8" },
+              grid: { color: currentTheme === "dark" ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.04)" }
             },
             y: {
-              title: { display: true, text: "Density", color: currentTheme === "dark" ? "#94a3b8" : "#475569" },
-              grid: { color: currentTheme === "dark" ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)" }
+              title: { display: true, text: "Density", color: "#94a3b8" },
+              grid: { color: currentTheme === "dark" ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.04)" }
             }
           }
         }
@@ -553,7 +499,7 @@ async function loadPlatforms() {
   }
 }
 
-// 9. Temporal Shift
+// 9. Temporal Shift (Spline Comparison)
 async function loadTemporal() {
   try {
     const data = await safeFetchJson(`${API_BASE}/api/temporal`, 'temporal');
@@ -570,33 +516,23 @@ async function loadTemporal() {
           labels: kde.x,
           datasets: [
             {
-              label: "2015 Pre-Article Displayed (Mean: 4.09 ★)",
+              label: "2015 Pre-Article Displayed (4.09★)",
               data: kde.kde_2015_displayed,
-              borderColor: "#ff2700",
-              backgroundColor: "rgba(255, 39, 0, 0.12)",
+              borderColor: "#f43f5e",
+              backgroundColor: "rgba(244, 63, 94, 0.12)",
               borderWidth: 2.5,
               fill: true,
-              tension: 0.35,
+              tension: 0.4,
               pointRadius: 0,
             },
             {
-              label: "2015 Pre-Article True HTML (Mean: 3.85 ★)",
-              data: kde.kde_2015_actual,
-              borderColor: "#008fd5",
-              borderDash: [4, 4],
-              borderWidth: 2,
-              fill: false,
-              tension: 0.35,
-              pointRadius: 0,
-            },
-            {
-              label: "2016-17 Post-Article Displayed (Mean: 3.89 ★)",
+              label: "2016-17 Post-Article Displayed (3.89★)",
               data: kde.kde_2016_17_displayed,
               borderColor: "#10b981",
-              backgroundColor: "rgba(16, 185, 129, 0.12)",
+              backgroundColor: "rgba(16, 185, 129, 0.15)",
               borderWidth: 2.5,
               fill: true,
-              tension: 0.35,
+              tension: 0.4,
               pointRadius: 0,
             }
           ]
@@ -614,12 +550,12 @@ async function loadTemporal() {
           },
           scales: {
             x: {
-              title: { display: true, text: "Fandango Star Rating Scale (0 to 5)", color: currentTheme === "dark" ? "#94a3b8" : "#475569" },
-              grid: { color: currentTheme === "dark" ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)" }
+              title: { display: true, text: "Fandango Star Rating Scale (0 to 5)", color: "#94a3b8" },
+              grid: { color: currentTheme === "dark" ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.04)" }
             },
             y: {
-              title: { display: true, text: "Density", color: currentTheme === "dark" ? "#94a3b8" : "#475569" },
-              grid: { color: currentTheme === "dark" ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)" }
+              title: { display: true, text: "Density", color: "#94a3b8" },
+              grid: { color: currentTheme === "dark" ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.04)" }
             }
           }
         }
@@ -630,64 +566,7 @@ async function loadTemporal() {
   }
 }
 
-// 10. Scale Normalization Converter Playground
-function initScaleConverter() {
-  const rtInput = document.getElementById("convRTInput");
-  const metaInput = document.getElementById("convMetaInput");
-  const imdbInput = document.getElementById("convIMDBInput");
-
-  function updateConverter() {
-    const rt = parseFloat(rtInput?.value || 0);
-    const meta = parseFloat(metaInput?.value || 0);
-    const imdb = parseFloat(imdbInput?.value || 0);
-
-    const rtNorm = (rt / 20.0).toFixed(2);
-    const metaNorm = (meta / 20.0).toFixed(2);
-    const imdbNorm = (imdb / 2.0).toFixed(2);
-
-    document.getElementById("convRTNorm").textContent = `${rtNorm} ★`;
-    document.getElementById("convMetaNorm").textContent = `${metaNorm} ★`;
-    document.getElementById("convIMDBNorm").textContent = `${imdbNorm} ★`;
-
-    const avgNorm = ((parseFloat(rtNorm) + parseFloat(metaNorm) + parseFloat(imdbNorm)) / 3.0).toFixed(2);
-    document.getElementById("convAvgNorm").textContent = `${avgNorm} ★`;
-  }
-
-  rtInput?.addEventListener("input", updateConverter);
-  metaInput?.addEventListener("input", updateConverter);
-  imdbInput?.addEventListener("input", updateConverter);
-  updateConverter();
-}
-
-// 11. Ticket Sales Conflict Simulator
-function initTicketImpactSimulator() {
-  const priceSlider = document.getElementById("ticketPriceSlider");
-  const visitorsSlider = document.getElementById("visitorsSlider");
-
-  function updateRevenue() {
-    const price = parseFloat(priceSlider?.value || 12);
-    const visitors = parseInt(visitorsSlider?.value || 500000);
-
-    document.getElementById("priceValDisplay").textContent = `$${price.toFixed(2)}`;
-    document.getElementById("visitorsValDisplay").textContent = visitors.toLocaleString();
-
-    // Baseline conversion @ 3.5 stars = 4.2%
-    // Glitched conversion @ 4.5 stars = 5.8% (+1.6% absolute conversion boost)
-    const baseTickets = visitors * 0.042;
-    const boostedTickets = visitors * 0.058;
-    const extraTickets = boostedTickets - baseTickets;
-    const extraRevenue = extraTickets * price;
-
-    document.getElementById("simExtraTickets").textContent = Math.round(extraTickets).toLocaleString();
-    document.getElementById("simExtraRevenue").textContent = `$${Math.round(extraRevenue).toLocaleString()}`;
-  }
-
-  priceSlider?.addEventListener("input", updateRevenue);
-  visitorsSlider?.addEventListener("input", updateRevenue);
-  updateRevenue();
-}
-
-// 12. Statistical Lab
+// 10. Statistical Lab
 async function loadStats() {
   try {
     const data = await safeFetchJson(`${API_BASE}/api/stats`, 'stats');
@@ -700,28 +579,28 @@ async function loadStats() {
     if (container) {
       container.innerHTML = `
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.75rem;">
-          <div class="plot-card">
+          <div class="nested-widget">
             <h3 style="font-family: var(--font-serif); font-size: 1.3rem; margin-bottom: 0.5rem;">1. Paired Inflation Test (2015 Dataset)</h3>
             <p style="color: var(--text-dim); font-size: 0.82rem; margin-bottom: 1rem;">Testing H₀: μ_diff = 0 vs H₁: μ_diff &gt; 0 (Right-Tailed Paired Test)</p>
-            <table class="data-table">
+            <table class="bento-table">
               <tr><td>Sample Size (N)</td><td><strong>${inf.sample_size} theatrical releases</strong></td></tr>
-              <tr><td>Mean Inflation Discrepancy</td><td><strong style="color: var(--fte-crimson);">+${Number(inf.mean_difference).toFixed(3)} stars</strong></td></tr>
+              <tr><td>Mean Inflation Discrepancy</td><td><strong style="color: var(--accent-crimson);">+${Number(inf.mean_difference).toFixed(3)} stars</strong></td></tr>
               <tr><td>Standard Error (SE)</td><td>${Number(inf.standard_error).toFixed(4)}</td></tr>
               <tr><td>Paired t-Statistic</td><td><strong>t = ${Number(inf.t_statistic).toFixed(2)}</strong></td></tr>
-              <tr><td>p-Value</td><td><strong style="color: var(--fte-crimson);">&lt; 10⁻¹⁵ (Extremely Significant)</strong></td></tr>
-              <tr><td>Cohen's d Effect Size</td><td><strong style="color: var(--fte-gold);">${Number(inf.cohens_d).toFixed(2)} (${inf.effect_interpretation})</strong></td></tr>
+              <tr><td>p-Value</td><td><strong style="color: var(--accent-crimson);">&lt; 10⁻¹⁵ (Extremely Significant)</strong></td></tr>
+              <tr><td>Cohen's d Effect Size</td><td><strong style="color: var(--accent-amber);">${Number(inf.cohens_d).toFixed(2)} (${inf.effect_interpretation})</strong></td></tr>
               <tr><td>95% Bootstrap Confidence Interval</td><td><strong>[+${Number(inf.bootstrap_95_ci[0]).toFixed(3)}, +${Number(inf.bootstrap_95_ci[1]).toFixed(3)}] stars</strong></td></tr>
             </table>
           </div>
 
-          <div class="plot-card">
+          <div class="nested-widget">
             <h3 style="font-family: var(--font-serif); font-size: 1.3rem; margin-bottom: 0.5rem;">2. Post-Article Shift (2015 vs 2016–17)</h3>
             <p style="color: var(--text-dim); font-size: 0.82rem; margin-bottom: 1rem;">Testing H₀: μ_2015 = μ_2016-17 vs H₁: μ_2015 ≠ μ_2016-17</p>
-            <table class="data-table">
+            <table class="bento-table">
               <tr><td>Sample Sizes</td><td>2015: <strong>${temp.sample_size_2015}</strong> | 2016-17: <strong>${temp.sample_size_2016_17}</strong></td></tr>
               <tr><td>2015 Displayed Mean</td><td><strong>${Number(temp.mean_2015).toFixed(2)} stars</strong></td></tr>
               <tr><td>2016-17 Displayed Mean</td><td><strong>${Number(temp.mean_2016_17).toFixed(2)} stars</strong></td></tr>
-              <tr><td>Net Drop in Displayed Ratings</td><td><strong style="color: var(--fte-green);">${Number(temp.mean_difference).toFixed(2)} stars</strong></td></tr>
+              <tr><td>Net Drop in Displayed Ratings</td><td><strong style="color: var(--accent-emerald);">${Number(temp.mean_difference).toFixed(2)} stars</strong></td></tr>
               <tr><td>Welch's t-Statistic</td><td><strong>t = ${Number(temp.t_statistic).toFixed(2)} (p = 0.0008)</strong></td></tr>
               <tr><td>Kolmogorov-Smirnov Test</td><td><strong>D = ${Number(temp.ks_statistic).toFixed(3)} (p = 0.0003)</strong></td></tr>
               <tr><td>Cohen's d</td><td><strong>${Number(temp.cohens_d).toFixed(2)}</strong></td></tr>
@@ -735,10 +614,10 @@ async function loadStats() {
   }
 }
 
-// 13. Film Explorer & Filters
+// 11. Film Explorer & Filters
 function initFilmExplorerEvents() {
   const searchInput = document.getElementById("filmSearchInput");
-  const chips = document.querySelectorAll(".chip-btn");
+  const chips = document.querySelectorAll(".filter-chip");
 
   chips.forEach(chip => {
     chip.addEventListener("click", () => {
@@ -784,9 +663,9 @@ function renderFilteredFilms() {
     tbody.innerHTML = filtered.map(m => `
       <tr onclick="updateSpotlightByName('${m.film.replace(/'/g, "\\'")}')">
         <td><strong>${m.film}</strong></td>
-        <td><span style="color: var(--fte-gold); font-size: 1rem;">${getVisualStars(m.fandango_stars)}</span> <strong>${Number(m.fandango_stars).toFixed(1)}</strong></td>
+        <td><span style="color: var(--accent-amber); font-size: 1rem;">${getVisualStars(m.fandango_stars)}</span> <strong>${Number(m.fandango_stars).toFixed(1)}</strong></td>
         <td>${Number(m.fandango_actual).toFixed(2)}</td>
-        <td><span class="diff-badge">+${Number(m.discrepancy).toFixed(2)}</span></td>
+        <td><span class="widget-badge danger">+${Number(m.discrepancy).toFixed(2)}</span></td>
         <td>${Number(m.rt_norm).toFixed(2)}</td>
         <td>${Number(m.metacritic_norm).toFixed(2)}</td>
         <td>${Number(m.imdb_norm).toFixed(2)}</td>
@@ -796,7 +675,7 @@ function renderFilteredFilms() {
   }
 }
 
-// 14. SQL Workbench
+// 12. SQL Console Presets
 async function loadSQLPresets() {
   const sidebar = document.getElementById("sqlQueryPills");
   const sqlEditor = document.getElementById("sqlWorkbenchEditor");
@@ -807,12 +686,12 @@ async function loadSQLPresets() {
 
     if (sidebar) {
       sidebar.innerHTML = presets.map(p => `
-        <button class="preset-btn" data-qid="${p.id}">
+        <button class="preset-pill-btn" data-qid="${p.id}">
           ${p.title}
         </button>
       `).join("");
 
-      sidebar.querySelectorAll(".preset-btn").forEach(btn => {
+      sidebar.querySelectorAll(".preset-pill-btn").forEach(btn => {
         btn.addEventListener("click", () => {
           const qid = btn.getAttribute("data-qid");
           const found = presets.find(q => q.id === qid);
@@ -855,7 +734,7 @@ async function runWorkbenchSQL() {
 
     if (!data.success) {
       resultBox.innerHTML = `
-        <div style="background: var(--fte-crimson-subtle); border-left: 3px solid var(--fte-crimson); padding: 1rem; border-radius: 6px; margin-top: 1rem; font-size: 0.85rem;">
+        <div style="background: rgba(244,63,94,0.1); border-left: 3px solid var(--accent-crimson); padding: 1rem; border-radius: 8px; margin-top: 1rem; font-size: 0.85rem;">
           <strong>SQL Error:</strong> ${data.error}
         </div>
       `;
@@ -874,18 +753,18 @@ async function runWorkbenchSQL() {
         <span>Execution time: ${elapsed} ms</span>
       </div>
       <div class="data-table-container">
-        <table class="data-table">
+        <table class="bento-table">
           <thead><tr>${headers}</tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>
     `;
   } catch (err) {
-    if (resultBox) resultBox.innerHTML = `<div style="color: var(--fte-crimson);">Error: ${err.message}</div>`;
+    if (resultBox) resultBox.innerHTML = `<div style="color: var(--accent-crimson);">Error: ${err.message}</div>`;
   }
 }
 
-// 15. CSV Export Button
+// 13. CSV Export
 function initExportButton() {
   const exportBtn = document.getElementById("btnExportDataset");
   exportBtn?.addEventListener("click", () => {
@@ -905,7 +784,7 @@ function initExportButton() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "fandango_audited_2015_dataset.csv");
+    link.setAttribute("download", "v_rate_movies_clean_dataset.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
